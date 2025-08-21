@@ -20,9 +20,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/ideas', ideaRoutes);
 
 app.use((req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalURL}`);
-  error.statusCode = 400;
-
+  const error = new Error(`Not Found - ${req.originalUrl}`);
+  error.statusCode = 404;
   next(error);
 });
 
