@@ -3,14 +3,17 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import ideaRoutes from './routes/ideaRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import connectDB from './config/database.js';
 
 dotenv.config();
 const PORT = process.env.PORT || 8000;
 
 const app = express();
 
-app.use(cors());
+// Connect MongoDB with mongoose
+connectDB();
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
