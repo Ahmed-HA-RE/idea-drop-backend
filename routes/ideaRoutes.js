@@ -6,9 +6,12 @@ const router = express.Router();
 //@route        GET /api/ideas
 //@description  Get all the ideas
 //@access       Public
+//@query        _limit(optional)
 router.get('/', async (req, res, next) => {
   try {
-    const ideas = await Idea.find();
+    const limit = +req.query._limit;
+
+    const ideas = await Idea.find().sort({ createdAt: -1 }).limit(limit);
     res.json(ideas);
   } catch (error) {
     next(error);
