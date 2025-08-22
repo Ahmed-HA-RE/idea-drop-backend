@@ -43,10 +43,35 @@ router.get('/:id', async (req, res, next) => {
 //@route        POST /api/ideas
 //@description  Create new idea
 //@access       Public
-router.post('/', (req, res) => {
-  const request = req.body;
+router.post('/', async (req, res, next) => {
+  try {
+    const { title, summary, description, tags } = req.body;
 
-  res.send(request);
+    if (!title?.trim() || !summary?.trim() || !description?.trim()) {
+      const error = new Error('Please fill in the fields');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const newIdea = await Idea.create({
+      title,
+      summary,
+      description,
+      tags:
+        typeof tags === 'string'
+          ? tags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag !== '')
+          : Array.isArray(tags)
+          ? tags
+          : [],
+    });
+
+    res.status(201).json(newIdea);
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
