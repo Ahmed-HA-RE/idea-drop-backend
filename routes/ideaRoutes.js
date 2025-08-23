@@ -70,6 +70,7 @@ router.post('/', protect, async (req, res, next) => {
           : Array.isArray(tags)
           ? tags
           : [],
+      user: req.user.id,
     });
 
     res.status(201).json(newIdea);
@@ -91,13 +92,21 @@ router.delete('/:id', protect, async (req, res, next) => {
       throw err;
     }
 
-    const idea = await Idea.findByIdAndDelete(id);
+    const idea = await Idea.findById(id);
 
     if (!idea) {
-      const err = new Error('Idea was not found 🙂');
-      err.statusCode = 404;
-      throw err;
+      const error = new Error('Idea not found');
+      error.statusCode = 404;
+      throw error;
     }
+
+    if (idea.user.toString() !== req.user._id.toString()) {
+      const error = new Error('Not authorized to delete it');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    await idea.deleteOne();
 
     res.status(200).json({ message: 'Idea was deleted succssfully ✅' });
   } catch (error) {
@@ -113,32 +122,41 @@ router.put('/:id', protect, async (req, res, next) => {
     const { id } = req.params;
     const { title, description, summary, tags } = req.body || {};
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      const err = new Error('Idea was not found 🙂');
-      err.statusCode = 404;
-      throw err;
-    }
-
     if (!title?.trim() || !summary?.trim() || !description?.trim()) {
       const error = new Error('Please fill in the fields');
       error.statusCode = 400;
       throw error;
     }
 
-    const updateIdea = await Idea.findByIdAndUpdate(
-      id,
-      {
-        title,
-        summary,
-        description,
-        tags: Array.isArray(tags)
-          ? tags
-          : tags.split(',').map((tag) => tag.trim()),
-      },
-      { new: true, runValidators: true }
-    );
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      const err = new Error('Idea was not found 🙂');
+      err.statusCode = 404;
+      throw err;
+    }
 
-    res.status(200).json(updateIdea);
+    const idea = await Idea.findById(id);
+
+    if (idea.user.toString() !== req.user._id.toString()) {
+      const error = new Error('Not authorized to edit it');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    idea.title = title;
+    idea.summary = summary;
+    idea.description = description;
+    idea.tags = Array.isArray(tags)
+      ? tags
+      : typeof tags === 'string'
+      ? tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t !== '')
+      : [];
+
+    const updatedIdea = await idea.save();
+
+    res.status(201).json(updatedIdea);
   } catch (error) {
     next(error);
   }
