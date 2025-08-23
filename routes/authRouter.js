@@ -1,6 +1,8 @@
 import express from 'express';
 import User from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
+import { jwtVerify } from 'jose';
+import { JWT_SECRET } from '../utils/getJwtSecret.js';
 
 const router = express.Router();
 
@@ -52,7 +54,6 @@ router.post('/register', async (req, res, next) => {
 //@route            POST /api/auth/login
 //@description      Authenticate user
 //@access           Public
-
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -112,6 +113,45 @@ router.post('/logout', async (req, res, next) => {
   });
 
   res.status(200).json('logged out succssfuly');
+});
+
+//@route            POST /api/auth/refresh
+//@description      Generate new access token from refresh token
+//@access           Public(Needs valid refresh in cookie)
+
+router.post('/refresh', async (req, res, next) => {
+  try {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+      const err = new Error('No refresh token');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    const user = await User.findById(payload.userId);
+
+    if (!user) {
+      const err = new Error('No user');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    const newAccessToken = await generateToken({ userId: user._id }, '1m');
+
+    res.json({
+      accessToken: newAccessToken,
+      user: {
+        name: user.name,
+        email: user.email,
+        id: user._id,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
