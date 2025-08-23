@@ -11,7 +11,7 @@ const router = express.Router();
 //@access           Public
 router.post('/register', async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body || {};
 
     if (!name.trim() || !email.trim() || !password.trim()) {
       const err = new Error('All Fields Are Required');
@@ -56,7 +56,7 @@ router.post('/register', async (req, res, next) => {
 //@access           Public
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
       const err = new Error('Email and password are required');
@@ -118,7 +118,6 @@ router.post('/logout', async (req, res, next) => {
 //@route            POST /api/auth/refresh
 //@description      Generate new access token from refresh token
 //@access           Public(Needs valid refresh in cookie)
-
 router.post('/refresh', async (req, res, next) => {
   try {
     const token = req.cookies?.refreshToken;
@@ -139,7 +138,10 @@ router.post('/refresh', async (req, res, next) => {
       throw err;
     }
 
-    const newAccessToken = await generateToken({ userId: user._id }, '1m');
+    const newAccessToken = await generateToken(
+      { userId: user._id.toString() },
+      '1m'
+    );
 
     res.json({
       accessToken: newAccessToken,
