@@ -1,5 +1,6 @@
 import express from 'express';
 import User from '../models/User.js';
+import { generateToken } from '../utils/generateToken.js';
 
 const router = express.Router();
 
@@ -26,7 +27,19 @@ router.post('/register', async (req, res, next) => {
 
     const user = await User.create({ name, email, password });
 
+    const playload = { userId: user._id.toString() };
+    const accessToken = await generateToken(playload, '1m');
+    const refreshToken = await generateToken(playload, '30d');
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none',
+    });
+
     res.status(201).json({
+      accessToken,
       _id: user.id,
       name: user.name,
       email: user.email,
