@@ -37,14 +37,16 @@ router.post('/register', async (req, res, next) => {
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 1000,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     res.status(201).json({
       accessToken,
-      _id: user.id,
-      name: user.name,
-      email: user.email,
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (error) {
     next(error);
@@ -68,7 +70,7 @@ router.post('/login', async (req, res, next) => {
 
     if (!user) {
       const err = new Error('Invalid Credentials');
-      err.statusCode = 400;
+      err.statusCode = 401;
       throw err;
     }
 
@@ -76,7 +78,7 @@ router.post('/login', async (req, res, next) => {
 
     if (!isMatch) {
       const err = new Error('Invalid Credentials');
-      err.statusCode = 400;
+      err.statusCode = 401;
       throw err;
     }
 
@@ -88,14 +90,16 @@ router.post('/login', async (req, res, next) => {
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 1000,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'none',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     });
 
     res.status(201).json({
       accessToken,
-      _id: user.id,
-      name: user.name,
-      email: user.email,
+      user: {
+        _id: user.id,
+        name: user.name,
+        email: user.email,
+      },
     });
   } catch (error) {
     next(error);
@@ -109,7 +113,7 @@ router.post('/logout', async (req, res, next) => {
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   });
 
   res.status(200).json('logged out succssfuly');

@@ -15,6 +15,13 @@ export async function protect(req, res, next) {
     }
 
     const token = authHeader.split(' ')[1];
+
+    if (!token) {
+      const err = new Error('Not Authorized, no token');
+      err.statusCode = 401;
+      throw err;
+    }
+
     const { payload } = await jwtVerify(token, JWT_SECRET);
 
     const user = await User.findById({ _id: payload.userId }).select(
@@ -30,6 +37,7 @@ export async function protect(req, res, next) {
     req.user = user;
     next();
   } catch (error) {
-    next(new Error('Not Authorized, no token'));
+    error.statusCode = 401;
+    next(error);
   }
 }
