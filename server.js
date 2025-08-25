@@ -15,7 +15,10 @@ const app = express();
 // Connect MongoDB with mongoose
 connectDB();
 
-const allowedOrigins = ['http://localhost:3000'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://ideadrop.ahmedrehandev.net',
+];
 
 app.use(
   cors({
